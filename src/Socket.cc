@@ -87,15 +87,16 @@ int Socket::MakeConnection( const char *host, const char *service ) {
   *
  **/
 size_t Socket::Read( void * buffer, size_t size ) {
+   if (!buffer || size == 0) {
+      return 0;
+   }
+   ssize_t bytesLeidos = ::read(this->idSocket, buffer, size);
 
-   int st = -1;
-
-   if ( -1 == st ) {
-      throw std::runtime_error( "Socket::Read( void *, size_t )" );
+   if (bytesLeidos < 0) {
+      throw std::runtime_error("Socket::Read error: " + std::string(strerror(errno)));
    }
 
-   return st;
-
+   return static_cast<size_t>(bytesLeidos);
 }
 
 
@@ -108,15 +109,16 @@ size_t Socket::Read( void * buffer, size_t size ) {
   *
  **/
 size_t Socket::Write( const void * buffer, size_t size ) {
+   if (!buffer || size == 0) {
+      return 0;
+   }
+   ssize_t bytesEnviados = ::write(this->idSocket, buffer, size);
 
-   int st = -1;
-
-   if ( -1 == st ) {
-      throw std::runtime_error( "Socket::Write( void *, size_t )" );
+   if (bytesEnviados < 0) {
+      throw std::runtime_error("Socket::Write error: " + std::string(strerror(errno)));
    }
 
-   return st;
-
+    return static_cast<size_t>(bytesEnviados);
 }
 
 
@@ -129,13 +131,10 @@ size_t Socket::Write( const void * buffer, size_t size ) {
  **/
 size_t Socket::Write( const char * text ) {
 
-   int st = -1;
-
-   if ( -1 == st ) {
-      throw std::runtime_error( "Socket::Write( char * )" );
-   }
-
-   return st;
+   if (text == nullptr)
+      return 0;
+   size_t len = strlen(text);
+   return Write(static_cast<const void*>(text), len);
 
 }
 

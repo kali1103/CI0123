@@ -39,22 +39,20 @@
 void VSocket::BuildSocket( char t, bool IPv6 ){
 
    int domain = AF_INET;
-   this->type = SOCK_STREAM;
-   this->IPv6 = AF_INET;
+   int type = SOCK_STREAM;
 
    if(t == 'd') {
-      this->type = SOCK_DGRAM;
+      type = SOCK_DGRAM;
    }
+   if(IPv6 == true) {
+      domain = AF_INET6;
+   }
+   this->idSocket = socket(domain, type, 0);
 
-   if(this->IPv6 == true) {
-      this->IPv6 = AF_INET6;
-   }
-   this->idSocket = socket(domain, this->type, this->IPv6);
-   
    if ( -1 == this->idSocket ) {
       throw std::runtime_error( "VSocket::BuildSocket, (reason)" );
    }
-
+   
 }
 
 
@@ -97,13 +95,20 @@ void VSocket::Close(){
  **/
 int VSocket::EstablishConnection( const char * hostip, int port ) {
 
-   int st = -1;
+   struct sockaddr_in host4;
+   memset(&host4, 0, sizeof(host4));
 
-   if ( -1 == st ) {
-      throw std::runtime_error( "VSocket::EstablishConnection" );
+   host4.sin_family = AF_INET;
+   if (inet_pton(AF_INET, hostip, &host4.sin_addr) <= 0) {
+      throw std::runtime_error("IP invalida");
+   }
+   host4.sin_port = htons(port);
+
+   if ( -1 == connect(this->idSocket, (sockaddr*)&host4, sizeof(host4))) {
+      throw std::runtime_error("Connect failed: " + std::string(strerror(errno)));
    }
 
-   return st;
+   return 0;
 
 }
 
@@ -117,11 +122,29 @@ int VSocket::EstablishConnection( const char * hostip, int port ) {
   *
  **/
 int VSocket::EstablishConnection( const char *host, const char *service ) {
-   int st = -1;
+   struct addrinfo hints{}, *res, *rp;
+   hints.ai_family = AF_UNSPEC;     // IPv4 o IPv6
+   hints.ai_socktype = this->type; // TCP o UDP
 
-   throw std::runtime_error( "VSocket::EstablishConnection" );
+   int st = getaddrinfo(host, service, &hints, &res);
+   if (st != 0) {
+      throw std::runtime_error("getaddrinfo failed: " + std::string(gai_strerror(st)));
+   }
 
-   return st;
+   int success = -1;
+   for (rp = res; rp != nullptr; rp = rp->ai_next) {
+      if (connect(idSocket, rp->ai_addr, rp->ai_addrlen) == 0) {
+         success = 0;
+         break;
+      }
+   }
 
+   freeaddrinfo(res);
+
+   if (success != 0) {
+      throw std::runtime_error("Unable to connect to host");
+   }
+
+   return 0;
 }
 
