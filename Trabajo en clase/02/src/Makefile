@@ -12,6 +12,8 @@ TARGETS := ipv4-udp-client.out ipv4-udp-server.out
 ALL := $(TARGETS)
 $(info $$TARGETS = $(TARGETS))
 
+all: $(TARGETS)
+
 %.o: %.cc $(DEPS)
 	$(CXX) $(CXXFLAGS) $<
 

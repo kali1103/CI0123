@@ -42,14 +42,14 @@ void VSocket::BuildSocket( char t, bool IPv6 ){
    int type = SOCK_STREAM; // Socket tcp.
 
    if(t == 'd') {
-      type == SOCK_DGRAM;
+      type = SOCK_DGRAM;
    }
    if(IPv6 == true) {
       domain = AF_INET6;
    }
    this->idSocket = socket(domain, type, 0);
 
-   if ( -1 == this->idSocket ) {
+   if (this->idSocket < 0) {
       throw std::runtime_error( "VSocket::BuildSocket, (reason)" );
    }
 
@@ -160,14 +160,15 @@ int VSocket::EstablishConnection( const char *host, const char *service ) {
   *
  **/
 int VSocket::Bind( int port ) {
-   struct sockaddr_in host4;
+   struct sockaddr_in host4;  // Struct de metadata.
    
-   host4.sin_family = AF_INET;
-   host4.sin_addr.s_addr = htonl( INADDR_ANY );
-   host4.sin_port = htons( port );
-   memset(host4.sin_zero, '\0', sizeof (host4.sin_zero));
+   host4.sin_family = AF_INET;   // Tipo IPv4.
+   host4.sin_addr.s_addr = htonl( INADDR_ANY ); // Cualquier direccion, creo que por defecto es local.
+   host4.sin_port = htons( port );  // Puerto.
+   // Tanto htons como htonl, convierten los datos, en este caso ip y puerto, a orden de red.
+   memset(host4.sin_zero, '\0', sizeof (host4.sin_zero));   // Memory allocation.
 
-   if (bind(this->idSocket, (struct sockaddr*)&host4, sizeof(host4))) {
+   if (::bind(this->idSocket, (struct sockaddr*)&host4, sizeof(host4))) {
       throw std::runtime_error("Bind failed: " + std::string(strerror(errno)));
    }
    
@@ -187,9 +188,14 @@ int VSocket::Bind( int port ) {
   *
  **/
 size_t VSocket::sendTo( const void * buffer, size_t size, void * addr ) {
-   int st = -1;
+   socklen_t addrlen = sizeof(sockaddr_in);
+   ssize_t sended_bytes = ::sendto(this->idSocket, buffer, size, 0, static_cast<const struct sockaddr *>(addr), addrlen);//static_cast<socklen_t>(sizeof(sockaddr_in)));
 
-   return st;
+   if (sended_bytes < 0) {
+      throw std::runtime_error("sendTo failed: " + std::string(strerror(errno)));
+   }
+
+   return static_cast<size_t>(sended_bytes);
 
 }
 
@@ -197,7 +203,7 @@ size_t VSocket::sendTo( const void * buffer, size_t size, void * addr ) {
 /**
   *  recvFrom method
   *
-  *  @param	const void * buffer: data to send
+  *  @param void * buffer: data to send
   *  @param	size_t size data size to send
   *  @param	void * addr address to receive from data
   *
@@ -207,9 +213,14 @@ size_t VSocket::sendTo( const void * buffer, size_t size, void * addr ) {
   *
  **/
 size_t VSocket::recvFrom( void * buffer, size_t size, void * addr ) {
-   int st = -1;
+   socklen_t addrlen = sizeof(sockaddr_in);
+   ssize_t received_bytes = ::recvfrom(this->idSocket, buffer, size, 0, static_cast<struct sockaddr *>(addr), &addrlen);
 
-   return st;
+   if (received_bytes < 0) {
+      throw std::runtime_error("recvFrom failed: " + std::string(strerror(errno)));
+   }
+
+   return static_cast<size_t>(received_bytes);
 
 }
 
