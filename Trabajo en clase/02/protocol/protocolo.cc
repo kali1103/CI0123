@@ -76,7 +76,7 @@ void forc () {
 
     close(fdcf);
 
-    // Traducir HTTP GET a protocolo TAKE
+    // Traducir HTTP GET a protocolo TAKE.
     std::string comd;
     if (strstr(buffer, "GET /menu") != nullptr) {
         comd = "TAKE menu";
@@ -108,7 +108,7 @@ void forc () {
 
     close(fdsc_in);
 
-    // Enviar respuesta al cliente como HTTP
+    // Enviar respuesta al cliente como HTTP.
     std::string resp = "HTTP/1.1 200 OK\nContent-Length: ";
     resp += std::to_string(strlen(buffer2));
     resp += "\n\n";
@@ -155,18 +155,18 @@ int main() {
 
     pid_t pid_fork = fork();
     if (pid_fork == 0) {
-        // Proceso tenedor
+        // Proceso tenedor.
         pid_t pid_server = fork();
         if (pid_server == 0) {
-            // Proceso servidor
+            // Proceso servidor.
             server();
         } else {
-            // Proceso tenedor
+            // Proceso tenedor.
             forc();
         }
     } else {
-        // Proceso cliente
-        sleep(1); // dar tiempo a que fork y server arranquen
+        // Proceso cliente.
+        sleep(1); // dar tiempo a que fork y server arranquen.
         cliente();
     }
 
