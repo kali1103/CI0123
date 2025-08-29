@@ -130,11 +130,8 @@ size_t Socket::Write( const void * buffer, size_t size ) {
   *
  **/
 size_t Socket::Write( const char * text ) {
-
    if (text == nullptr)
       return 0;
-   size_t len = strlen(text);
-   return Write(static_cast<const void*>(text), len);
-
+   return Write(static_cast<const void*>(text), strlen(text));
 }
 
