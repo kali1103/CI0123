@@ -163,12 +163,22 @@ void SSLSocket::InitContext( bool serverContext ) {
  *
  **/
 int SSLSocket::MakeConnection( const char * hostName, int port ) {
-   int st;
+   // First establish a normal connection TCP.
+   int st = Socket::MakeConnection( hostName, port );
+   if (st < 0) {
+      throw std::runtime_error( "SSLSocket::MakeConnection( const char *, int )" );
+   }
+   // Assign the socket file descriptor to the SSLStruct. 
+   SSL *ssl = reinterpret_cast<SSL *>( this->SSLStruct );
+   if (SSL_set_fd( ssl, this->idSocket ) != 1) {
+      throw std::runtime_error( "SSLSocket::MakeConnection( const char *, int )" );
+   }
 
-   st = this->MakeConnection( hostName, port );		// Establish a non ssl connection first
-
+   // Then stablish a SSL connection.
+   if (SSL_connect(ssl) != 1) {
+      throw std::runtime_error( "SSLSocket::MakeConnection( SSL_connect failed )" );
+   }
    return st;
-
 }
 
 
@@ -183,9 +193,17 @@ int SSLSocket::MakeConnection( const char * hostName, int port ) {
  *
  **/
 int SSLSocket::MakeConnection( const char * host, const char * service ) {
-   int st;
-
-   st = this->MakeConnection( host, service );
+   int st = Socket::MakeConnection(host, service);
+   if (st <0) {
+      throw std::runtime_error( "SSLSocket::MakeConnection( const char *, const char * )" );
+   }
+   SSL *ssl = reinterpret_cast<SSL *>(this->SSLStruct);
+   if (SSL_set_fd(ssl, this->idSocket) != 1) {
+      throw std::runtime_error( "SSLSocket::MakeConnection( SSL_set_fd failed )" );
+   }
+   if (SSL_connect(ssl) != 1) {
+      throw std::runtime_error( "SSLSocket::MakeConnection( SSL_connect failed )" );
+   }
 
    return st;
 
@@ -205,13 +223,12 @@ int SSLSocket::MakeConnection( const char * host, const char * service ) {
   *
  **/
 size_t SSLSocket::Read( void * buffer, size_t size ) {
-   int st = -1;
-
+   SSL *ssl = reinterpret_cast<SSL *>(this->SSLStruct);
+   int st = SSL_read(ssl, buffer, static_cast<int>(size));
    if ( -1 == st ) {
       throw std::runtime_error( "SSLSocket::Read( void *, size_t )" );
    }
-
-   return st;
+   return static_cast<size_t>(st);
 
 }
 
@@ -229,14 +246,13 @@ size_t SSLSocket::Read( void * buffer, size_t size ) {
   *
  **/
 size_t SSLSocket::Write( const char * string ) {
-   int st = -1;
-
+   SSL *ssl = reinterpret_cast<SSL *>(this->SSLStruct);
+   int st = SSL_write(ssl, string, static_cast<int>(strlen(string)));
    if ( -1 == st ) {
       throw std::runtime_error( "SSLSocket::Write( const char * )" );
    }
 
-   return st;
-
+   return static_cast<size_t>(st);
 }
 
 
@@ -253,13 +269,13 @@ size_t SSLSocket::Write( const char * string ) {
   *
  **/
 size_t SSLSocket::Write( const void * buffer, size_t size ) {
-   int st = -1;
-
+   SSL *ssl = reinterpret_cast<SSL *>(this->SSLStruct);
+   int st = SSL_write(ssl, buffer, static_cast<int>(size));
    if ( -1 == st ) {
       throw std::runtime_error( "SSLSocket::Write( void *, size_t )" );
    }
 
-   return st;
+   return static_cast<size_t>(st);
 
 }
 
