@@ -25,7 +25,8 @@
 int main( int argc, char * argv[] ) {
    const char * whalev6 = "fe80::8f5a:e2e1:7256:ffe3%enp0s31f6";
    const char * whalev4 = "10.1.35.1";
-   const char * request = "GET /aArt/index.php?disk=Disk-01&fig=whale-1.txt HTTP/1.1\r\nhost: redes.ecci\r\n\r\n";
+   // Quiza haya un error en el v1.1, pero el servidor responde igual...
+   const char * request = "GET /aArt/index.php?disk=Disk-01&fig=whale-1.txt\r\nHTTP/v1.1\r\nhost: redes.ecci\r\n\r\n";
    VSocket * client;
    char a[512];
    int ipVer = 4;	// 4 = IPv4, 6 = IPv6
@@ -74,7 +75,7 @@ int main( int argc, char * argv[] ) {
    }
 
    client->Write(  request );
-   client->Read( a, 511 );
-   printf( "%s\n", a);
+   int br = client->Read( a, 511 );
+   printf( "bytes read %d\n%s\n", br, a);
 
 }
