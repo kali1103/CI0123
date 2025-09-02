@@ -4,6 +4,9 @@
 #include <fcntl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <dirent.h>
+#include <vector>
+#include <algorithm>
 
 // Se crean los path de los respectivos pipes.
 const char* client_to_fork = "/tmp/ctf";
@@ -40,16 +43,55 @@ void server () {
 
     // Protocolo personalizado
     if (strcmp(buffer, "TAKE menu") == 0) {
-        response = "figura1.txt, figura2.txt\n";
+        // Listar archivos .txt del directorio actual
+        DIR* dir = opendir(".");
+        if (dir) {
+            struct dirent* entry;
+            std::vector<std::string> figuras;
+            while ((entry = readdir(dir)) != nullptr) {
+                std::string fname = entry->d_name;
+                if (fname.length() > 4 && fname.substr(fname.length() - 4) == ".txt") {
+                    figuras.push_back(fname);
+                }
+            }
+            closedir(dir);
+            std::sort(figuras.begin(), figuras.end());
+            for (size_t i = 0; i < figuras.size(); ++i) {
+                response += figuras[i];
+                if (i + 1 < figuras.size()) response += ", ";
+            }
+            response += "\n";
+        } else {
+            response = "ERROR: No se pudo abrir el directorio\n";
+        }
     } else if (strcmp(buffer, "TAKE ls") == 0) {
-        response = "carpeta1, carpeta2\n";
+        // Listar todos los archivos y carpetas del directorio actual
+        DIR* dir = opendir(".");
+        if (dir) {
+            struct dirent* entry;
+            std::vector<std::string> items;
+            while ((entry = readdir(dir)) != nullptr) {
+                std::string fname = entry->d_name;
+                if (fname != "." && fname != "..") {
+                    items.push_back(fname);
+                }
+            }
+            closedir(dir);
+            std::sort(items.begin(), items.end());
+            for (size_t i = 0; i < items.size(); ++i) {
+                response += items[i];
+                if (i + 1 < items.size()) response += ", ";
+            }
+            response += "\n";
+        } else {
+            response = "ERROR: No se pudo abrir el directorio\n";
+        }
     } else {
         response = "ERROR: comando desconocido\n";
     }
 
     close(fdfs);
 
-    
     int fdsc = open(server_to_client, O_WRONLY);
     if (fdsc == -1) {
         perror("Open");
@@ -57,7 +99,6 @@ void server () {
 
     write(fdsc, response.c_str(), response.size());
     close(fdsc);
-
 }
 
 // Tenedor.
