@@ -11,14 +11,14 @@
 // Se crean los path de los respectivos pipes.
 const char* client_to_fork = "/tmp/ctf";
 const char* fork_to_server = "/tmp/fts";
-const char* server_to_client = "/tmp/stc";
-const char* fork_to_client    = "/tmp/ftc";
+const char* server_to_fork = "/tmp/stf";
+const char* fork_to_client = "/tmp/ftc";
 
 // Crea los pipes.
 void fifafo () {
     mkfifo(client_to_fork, 0666);   // el primer 0 indica octal, luego, las
     mkfifo(fork_to_server, 0666);   // posiciones son owner-group-other, es una
-    mkfifo(server_to_client, 0666); // suma de permisos: 
+    mkfifo(server_to_fork, 0666);   // suma de permisos: 
     mkfifo(fork_to_client, 0666);   // read = 4
                                     // write = 2
                                     // execute = 1
@@ -92,13 +92,13 @@ void server () {
 
     close(fdfs);
 
-    int fdsc = open(server_to_client, O_WRONLY);
-    if (fdsc == -1) {
+    int fdsf = open(server_to_fork, O_WRONLY);
+    if (fdsf == -1) {
         perror("Open");
     }
 
-    write(fdsc, response.c_str(), response.size());
-    close(fdsc);
+    write(fdsf, response.c_str(), response.size());
+    close(fdsf);
 }
 
 // Tenedor.
@@ -136,18 +136,18 @@ void forc () {
     close(fdfs);
 
     char buffer2[256];
-    int fdsc_in = open(server_to_client, O_RDONLY);
-    if (fdsc_in == -1) {
+    int fdsf_in = open(server_to_fork, O_RDONLY);
+    if (fdsf_in == -1) {
         perror("Open");
     }
 
-    int m = read(fdsc_in, buffer2, sizeof(buffer2) - 1);
+    int m = read(fdsf_in, buffer2, sizeof(buffer2) - 1);
     if (m > 0) {
         buffer2[m] = '\0';
         printf("[Fork] Recibido de server: %s", buffer2);
     }
 
-    close(fdsc_in);
+    close(fdsf_in);
 
     // Enviar respuesta al cliente como HTTP.
     std::string resp = "HTTP/1.1 200 OK\nContent-Length: ";
@@ -155,13 +155,13 @@ void forc () {
     resp += "\n\n";
     resp += buffer2;
 
-    int fdsc_out = open(fork_to_client, O_WRONLY);
-    if (fdsc_out == -1) {
+    int fdsf_out = open(fork_to_client, O_WRONLY);
+    if (fdsf_out == -1) {
         perror("Open");
     }
 
-    write(fdsc_out, resp.c_str(), resp.size()); // Envia mensaje.
-    close(fdsc_out);
+    write(fdsf_out, resp.c_str(), resp.size()); // Envia mensaje.
+    close(fdsf_out);
 
 }
 
