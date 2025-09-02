@@ -164,7 +164,7 @@ void SSLSocket::InitContext( bool serverContext ) {
  **/
 int SSLSocket::MakeConnection( const char * hostName, int port ) {
    // First establish a normal connection TCP.
-   int st = Socket::MakeConnection( hostName, port );
+   int st = this->EstablishConnection( hostName, port );
    if (st < 0) {
       throw std::runtime_error( "SSLSocket::MakeConnection( const char *, int )" );
    }
@@ -193,7 +193,7 @@ int SSLSocket::MakeConnection( const char * hostName, int port ) {
  *
  **/
 int SSLSocket::MakeConnection( const char * host, const char * service ) {
-   int st = Socket::MakeConnection(host, service);
+   int st = this->EstablishConnection(host, service);
    if (st <0) {
       throw std::runtime_error( "SSLSocket::MakeConnection( const char *, const char * )" );
    }
