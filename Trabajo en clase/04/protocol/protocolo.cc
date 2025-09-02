@@ -27,7 +27,7 @@ void fifafo () {
 }
 
 void server () {
-    char buffer[256];
+    char buffer[512];
     int fdfs = open(fork_to_server, O_RDONLY);
     if (fdfs == -1) {
         perror("Open");
@@ -43,22 +43,23 @@ void server () {
 
     // Protocolo personalizado
     if (strcmp(buffer, "TAKE menu") == 0) {
-        // Listar archivos .txt del directorio actual
-        DIR* dir = opendir(".");
+        // Listar archivos .txt del directorio "figuras".
+        DIR* dir = opendir("./figuras");
         if (dir) {
             struct dirent* entry;
             std::vector<std::string> figuras;
             while ((entry = readdir(dir)) != nullptr) {
                 std::string fname = entry->d_name;
+                // Si el nombre del archivo es mayor a 4 caracteres y termina en ".txt".
                 if (fname.length() > 4 && fname.substr(fname.length() - 4) == ".txt") {
                     figuras.push_back(fname);
                 }
             }
             closedir(dir);
-            std::sort(figuras.begin(), figuras.end());
+            std::sort(figuras.begin(), figuras.end()); // Ordena alfabeticamente.
             for (size_t i = 0; i < figuras.size(); ++i) {
                 response += figuras[i];
-                if (i + 1 < figuras.size()) response += ", ";
+                if (i + 1 < figuras.size()) response += "\n";
             }
             response += "\n";
         } else {
@@ -80,7 +81,7 @@ void server () {
             std::sort(items.begin(), items.end());
             for (size_t i = 0; i < items.size(); ++i) {
                 response += items[i];
-                if (i + 1 < items.size()) response += ", ";
+                if (i + 1 < items.size()) response += "\n";
             }
             response += "\n";
         } else {
@@ -108,7 +109,7 @@ void forc () {
         perror("Open");
     }
 
-    char buffer[256];
+    char buffer[512];
     int n = read(fdcf, buffer, sizeof(buffer) - 1);
     if (n > 0) {
         buffer[n] = '\0'; // Fin de string.
@@ -135,7 +136,7 @@ void forc () {
     write(fdfs, comd.c_str(), comd.size()); // Envia mensaje.
     close(fdfs);
 
-    char buffer2[256];
+    char buffer2[512];
     int fdsf_in = open(server_to_fork, O_RDONLY);
     if (fdsf_in == -1) {
         perror("Open");
@@ -144,7 +145,7 @@ void forc () {
     int m = read(fdsf_in, buffer2, sizeof(buffer2) - 1);
     if (m > 0) {
         buffer2[m] = '\0';
-        printf("[Fork] Recibido de server: %s", buffer2);
+        printf("[Fork] Recibido de server:\n%s", buffer2);
     }
 
     close(fdsf_in);
@@ -166,8 +167,14 @@ void forc () {
 }
 
 // Cliente.
-void cliente () {
-    std::string request = "GET /menu HTTP/1.1\n\n";
+void cliente (int option) {
+    std::string request = "GET /dir HTTP/1.1\n\n";
+    if (option == 1) {
+        request = "GET /menu HTTP/1.1\n\n";
+    }
+    if (option == 2) {
+        request = "GET /figuras/ballenita.txt HTTP/1.1\n\n";
+    }
     int fdcf_out = open(client_to_fork, O_WRONLY);
     if (fdcf_out == -1) {
         perror("Open");
@@ -176,7 +183,7 @@ void cliente () {
     write(fdcf_out, request.c_str(), request.size());
     close(fdcf_out);
 
-    char buffer[256];
+    char buffer[512];
     int fdcf_in = open(fork_to_client, O_RDONLY);
     if (fdcf_in == -1) {
         perror("Open");
@@ -208,7 +215,7 @@ int main() {
     } else {
         // Proceso cliente.
         sleep(1); // dar tiempo a que fork y server arranquen.
-        cliente();
+        cliente(2); // Cambiar a 1 para pedir /menu.
     }
 
     return 0;

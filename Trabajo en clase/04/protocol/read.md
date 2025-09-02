@@ -16,7 +16,7 @@ De igual forma ```TAKE ls``` debería imprimir el directorio actual:
 carpeta1
 carpeta2
 ```
-Y al usar ```TAKE ls carpeta1``` deberia imprimir el directorio de la carpeta1 y contenido, de igual forma al utilizar ```TAKE ls carpeta1/subcarpeta```:
+Y al usar ```TAKE ls carpeta1``` deberia imprimir el directorio de la carpeta1 y contenido:
 ```
 subcarpeta
 figura.txt
@@ -27,16 +27,16 @@ Por último, el servidor recibe en notación ```TAKE``` y con algun diccionario 
 TAKE ls -> retorna el directorio.
 TAKE menu -> retorna el listado de figuras.
 TAKE aergfef -> ERROR: comando desconocido.
-TAKE fig1.txt ->__ \ / __
-               /  \ | /  \
-                   \|/
-              _,.---v---._
-     /\__/\  /            \
-     \_  _/ /              \
-       \ \_|           @ __|
-        \                \_
-         \     ,__/ 2025  /
-       ~~~`~~~~~~~~~~~~~~/~~~~
+TAKE /figuras/ballenita.txt -> __ \ / __
+                         /  \ | /  \
+                             \|/
+                        _,.---v---._
+               /\__/\  /            \
+               \_  _/ /              \
+                 \ \_|           @ __|
+                  \                \_
+                   \     ,__/ 2025  /
+                 ~~~`~~~~~~~~~~~~~~/~~~~
 ```
 ## Conclusion
 A grandes rasgos, el cliente envía en ```HTTP```, el tenedor se encarga de recibirlo y enviarlo al servidor como ```PROTOCOLO TAKE```, a su vez el servidor retorna en notación ```TAKE``` y el fork le da la respuesta del servidor al cliente en protocolo ```HTTP```, funcionando así como un traductor.
