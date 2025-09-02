@@ -7,7 +7,7 @@ SOURCES := $(wildcard *.cc)
 OBJECTS := $(SOURCES:.cc=.o)
 
 # Nombre del ejecutable
-TARGET := programa.out programa
+TARGET := protocolo.out
 
 # Regla por defecto
 all: $(TARGET)

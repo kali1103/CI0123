@@ -87,6 +87,53 @@ void server () {
         } else {
             response = "ERROR: No se pudo abrir el directorio\n";
         }
+        // Manejo de peticiones de figuras.
+    } else if (strncmp(buffer, "TAKE /", 6) == 0) {
+        std::string path = std::string(buffer + 5); // Toma buffer desde la 5ta posicion.
+        // Como la peticion contiene el header de HTTP se debe eliminar.
+        size_t space = path.find(" ");
+        if (space != std::string::npos) {
+            path = path.substr(0, space);
+        }
+        // Si path no esta vacio y el primer caracter es '/' o ' ', lo elimina.
+        if (!path.empty() && path[0] == '/') {
+            path.erase(0,1);
+        }
+        if (!path.empty() && path[0] == ' ') {
+            path.erase(0,1);
+        }
+
+        // Busca la posicion del slash.
+        size_t pos = path.find('/');
+        if (pos == std::string::npos) { // npos es el final del string.
+            response = "ERROR: Ruta invalida, falta archivo\n";
+        } else {
+            std::string dname = path.substr(0, pos); // desde 0 hasta la posicion del slash.
+            std::string fname = path.substr(pos + 1); // Desde la posicion del slash hasta el final.
+
+            // Intentamos abrir el directorio.
+            DIR* dir = opendir(dname.c_str());
+            if (!dir) {
+                response = "ERROR: Directorio no existe\n";
+            } else {
+                closedir(dir); // Lo cerramos, ya sabemos que existe.
+
+                // Construimos el path completo y lo abrimos para lectura.
+                std::string fpath = dname + "/" + fname;
+                int figura = open(fpath.c_str(), O_RDONLY);
+                if(figura == -1) {
+                     response = "ERROR: Archivo no existe\n";
+                } else {
+                    char fbuff[512];
+                    ssize_t breads;
+                    while ((breads = read(figura, fbuff, sizeof(fbuff))) > 0) {
+                        response.append(fbuff, breads);
+                    }
+                    response += '\n';
+                }
+                close(figura);
+            }
+        }
     } else {
         response = "ERROR: comando desconocido\n";
     }
@@ -124,7 +171,9 @@ void forc () {
         comd = "TAKE menu";
     } else if (strstr(buffer, "GET /dir") != nullptr) {
         comd = "TAKE ls";
-    } else {
+    } else if (strstr(buffer, "GET /") != nullptr) {
+        comd = "TAKE " + std::string(buffer + 4);
+    }else {
         comd = "UNKNOWN";
     }
 
@@ -152,7 +201,7 @@ void forc () {
 
     // Enviar respuesta al cliente como HTTP.
     std::string resp = "HTTP/1.1 200 OK\nContent-Length: ";
-    resp += std::to_string(strlen(buffer2));
+    resp += std::to_string(m);
     resp += "\n\n";
     resp += buffer2;
 
@@ -173,7 +222,7 @@ void cliente (int option) {
         request = "GET /menu HTTP/1.1\n\n";
     }
     if (option == 2) {
-        request = "GET /figuras/ballenita.txt HTTP/1.1\n\n";
+        request = "GET /figuras/whale.txt HTTP/1.1\n\n";
     }
     int fdcf_out = open(client_to_fork, O_WRONLY);
     if (fdcf_out == -1) {
@@ -215,7 +264,8 @@ int main() {
     } else {
         // Proceso cliente.
         sleep(1); // dar tiempo a que fork y server arranquen.
-        cliente(2); // Cambiar a 1 para pedir /menu.
+        // Cambiar a 1 para pedir /menu, 2 para pedir una figura y cualquier otro numero para /dir.
+        cliente(0);
     }
 
     return 0;
