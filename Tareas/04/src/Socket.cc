@@ -32,7 +32,7 @@
  **/
 Socket::Socket( char t, bool IPv6 ){
 
-   this->BuildSocket( t, IPv6 );      // Call base class constructor
+   this->BuildSocket( t, IPv6 );      // Call base class constructor.
 
 }
 

@@ -11,7 +11,7 @@
 #include "VSocket.h"
 #include "Socket.h"
 #include "SSLSocket.h"
-#define buffersize 256
+#define buffersize 256 // Tamaño del buffer de lectura.
 
 
 int main( int argc, char * argv[] ) {
@@ -19,7 +19,8 @@ int main( int argc, char * argv[] ) {
   std::map<std::string, std::string> dicc = {
     {"os",  "os.ecci.ucr.ac.cr"}, // -> DNS.
     {"osi", "10.84.166.62"},      // -> IP local.
-    {"ose", "163.178.104.62"}     // -> IP Publica.
+    {"ose", "163.178.104.62"},     // -> IP Publica.
+    {"os6", "fe80::8f5a:e2e1:7256:ffe3%enp0s31f6"}
   };
 
   const char * direccion = dicc["ose"].c_str(); // Direccion por defecto.
@@ -34,6 +35,7 @@ int main( int argc, char * argv[] ) {
     std::string arg = argv[i];
     if (arg == "ipv6") {
       ipv6 = true;
+      direccion = dicc["os6"].c_str();
     } else if (arg == "ipv4") {
       ipv6 = false;
     } else if (arg == "ssl") {

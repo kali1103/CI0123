@@ -40,7 +40,7 @@ class VSocket {
       bool IPv6;      // Is IPv6 socket?
       int port;       // Socket associated port
       char type;      // Socket type (datagram, stream, etc.)
-        
+      int domain;    // Socket domain (IPv4, IPv6, etc.).
 };
 
 #endif // VSocket_h

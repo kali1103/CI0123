@@ -174,7 +174,7 @@ int SSLSocket::MakeConnection( const char * hostName, int port ) {
       throw std::runtime_error( "SSLSocket::MakeConnection( const char *, int )" );
    }
 
-   // Then stablish a SSL connection.
+   // Then stablish SSL connection.
    if (SSL_connect(ssl) != 1) {
       throw std::runtime_error( "SSLSocket::MakeConnection( SSL_connect failed )" );
    }

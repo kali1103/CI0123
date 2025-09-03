@@ -38,8 +38,8 @@ class SSLSocket : public VSocket {
       void LoadCertificates( const char *, const char * );
 
 // Instance variables      
-      void * SSLContext;				// SSL context
-      void * SSLStruct;					// SSL BIO (Basic Input/Output)
+      void * SSLContext;				// SSL context.
+      void * SSLStruct;					// SSL BIO (Basic Input/Output).
 
 };
 

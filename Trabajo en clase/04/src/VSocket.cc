@@ -40,7 +40,6 @@ void VSocket::BuildSocket( char t, bool IPv6 ){
 
    int domain = AF_INET; // Socket IPv4.
    int type = SOCK_STREAM; // Socket tcp.
-
    if(t == 'd') {
       type = SOCK_DGRAM;
    }
@@ -48,7 +47,8 @@ void VSocket::BuildSocket( char t, bool IPv6 ){
       domain = AF_INET6;
    }
    this->idSocket = socket(domain, type, 0);
-
+   this->domain = domain; // Guardar el dominio para uso posterior
+   this->type = type;
    if (this->idSocket < 0) {
       throw std::runtime_error( "VSocket::BuildSocket, (reason)" );
    }
@@ -96,20 +96,32 @@ void VSocket::Close(){
   *
  **/
 int VSocket::EstablishConnection( const char * hostip, int port ) {
-
-   struct sockaddr_in host4;
-   memset(&host4, 0, sizeof(host4));
-
-   host4.sin_family = AF_INET;
-   if (inet_pton(AF_INET, hostip, &host4.sin_addr) <= 0) {
-      throw std::runtime_error( "Ip invalida" );
+   // Soporte para IPv4 e IPv6
+   if (this->domain == AF_INET6) {
+      struct sockaddr_in6 host6;
+      memset(&host6, 0, sizeof(host6));
+      host6.sin6_family = AF_INET6;
+      if (inet_pton(AF_INET6, hostip, &host6.sin6_addr) <= 0) {
+         throw std::runtime_error("Ip invalida (IPv6)");
+      }
+      host6.sin6_port = htons(port);
+      if (-1 == connect(this->idSocket, (sockaddr*)&host6, sizeof(host6))) {
+         throw std::runtime_error("Connect failed (IPv6): " + std::string(strerror(errno)));
+      }
+   } else if (this->domain == AF_INET) {
+      struct sockaddr_in host4;
+      memset(&host4, 0, sizeof(host4));
+      host4.sin_family = AF_INET;
+      if (inet_pton(AF_INET, hostip, &host4.sin_addr) <= 0) {
+         throw std::runtime_error("Ip invalida (IPv4)");
+      }
+      host4.sin_port = htons(port);
+      if (-1 == connect(this->idSocket, (sockaddr*)&host4, sizeof(host4))) {
+         throw std::runtime_error("Connect failed (IPv4): " + std::string(strerror(errno)));
+      }
+   } else {
+      throw std::runtime_error("Dominio de socket no soportado");
    }
-   host4.sin_port = htons(port);
-
-   if (-1 == connect(this->idSocket, (sockaddr*)&host4, sizeof(host4))) {
-      throw std::runtime_error("Connect failed: " + std::string(strerror(errno)));
-   }
-
    return 0;
 }
 
@@ -188,13 +200,16 @@ int VSocket::Bind( int port ) {
   *
  **/
 size_t VSocket::sendTo( const void * buffer, size_t size, void * addr ) {
-   socklen_t addrlen = sizeof(sockaddr_in);
-   ssize_t sended_bytes = ::sendto(this->idSocket, buffer, size, 0, static_cast<const struct sockaddr *>(addr), addrlen);//static_cast<socklen_t>(sizeof(sockaddr_in)));
-
+   socklen_t addrlen;
+   if (this->domain == AF_INET6) {
+      addrlen = sizeof(sockaddr_in6);
+   } else {
+      addrlen = sizeof(sockaddr_in);
+   }
+   ssize_t sended_bytes = ::sendto(this->idSocket, buffer, size, 0, static_cast<const struct sockaddr *>(addr), addrlen);
    if (sended_bytes < 0) {
       throw std::runtime_error("sendTo failed: " + std::string(strerror(errno)));
    }
-
    return static_cast<size_t>(sended_bytes);
 
 }
@@ -213,13 +228,16 @@ size_t VSocket::sendTo( const void * buffer, size_t size, void * addr ) {
   *
  **/
 size_t VSocket::recvFrom( void * buffer, size_t size, void * addr ) {
-   socklen_t addrlen = sizeof(sockaddr_in);
+   socklen_t addrlen;
+   if (this->domain == AF_INET6) {
+      addrlen = sizeof(sockaddr_in6);
+   } else {
+      addrlen = sizeof(sockaddr_in);
+   }
    ssize_t received_bytes = ::recvfrom(this->idSocket, buffer, size, 0, static_cast<struct sockaddr *>(addr), &addrlen);
-
    if (received_bytes < 0) {
       throw std::runtime_error("recvFrom failed: " + std::string(strerror(errno)));
    }
-
    return static_cast<size_t>(received_bytes);
 
 }
