@@ -95,34 +95,54 @@ void VSocket::Close(){
   * @param      int port: process address, example 80
   *
  **/
-int VSocket::EstablishConnection( const char * hostip, int port ) {
-   // Soporte para IPv4 e IPv6
-   if (this->domain == AF_INET6) {
-      struct sockaddr_in6 host6;
-      memset(&host6, 0, sizeof(host6));
-      host6.sin6_family = AF_INET6;
-      if (inet_pton(AF_INET6, hostip, &host6.sin6_addr) <= 0) {
-         throw std::runtime_error("Ip invalida (IPv6)");
-      }
-      host6.sin6_port = htons(port);
-      if (-1 == connect(this->idSocket, (sockaddr*)&host6, sizeof(host6))) {
-         throw std::runtime_error("Connect failed (IPv6): " + std::string(strerror(errno)));
-      }
-   } else if (this->domain == AF_INET) {
-      struct sockaddr_in host4;
-      memset(&host4, 0, sizeof(host4));
-      host4.sin_family = AF_INET;
-      if (inet_pton(AF_INET, hostip, &host4.sin_addr) <= 0) {
-         throw std::runtime_error("Ip invalida (IPv4)");
-      }
-      host4.sin_port = htons(port);
-      if (-1 == connect(this->idSocket, (sockaddr*)&host4, sizeof(host4))) {
-         throw std::runtime_error("Connect failed (IPv4): " + std::string(strerror(errno)));
-      }
-   } else {
-      throw std::runtime_error("Dominio de socket no soportado");
-   }
-   return 0;
+int VSocket::EstablishConnection(const char *hostip, int port) {
+    // Intenta IPv4
+    struct sockaddr_in host4;
+    memset(&host4, 0, sizeof(host4));
+    host4.sin_family = AF_INET;
+    if (inet_pton(AF_INET, hostip, &host4.sin_addr) == 1) {
+        host4.sin_port = htons(port);
+        if (-1 == connect(this->idSocket, (sockaddr*)&host4, sizeof(host4))) {
+            throw std::runtime_error("Connect failed (IPv4): " + std::string(strerror(errno)));
+        }
+        return 0;
+    }
+
+    // Intenta IPv6
+    struct sockaddr_in6 host6;
+    memset(&host6, 0, sizeof(host6));
+    host6.sin6_family = AF_INET6;
+    if (inet_pton(AF_INET6, hostip, &host6.sin6_addr) == 1) {
+        host6.sin6_port = htons(port);
+        if (-1 == connect(this->idSocket, (sockaddr*)&host6, sizeof(host6))) {
+            throw std::runtime_error("Connect failed (IPv6): " + std::string(strerror(errno)));
+        }
+        return 0;
+    }
+
+    // Si no es IP, asume DNS y usa getaddrinfo
+    struct addrinfo hints{}, *res, *rp;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = this->domain; // AF_INET o AF_INET6
+    hints.ai_socktype = this->type; // TCP o UDP
+    char portstr[16];
+    snprintf(portstr, sizeof(portstr), "%d", port);
+    int st = getaddrinfo(hostip, portstr, &hints, &res);
+    if (st != 0) {
+        throw std::runtime_error("getaddrinfo failed: " + std::string(gai_strerror(st)));
+    }
+    int success = -1;
+    for (rp = res; rp != nullptr; rp = rp->ai_next) {
+        if (connect(this->idSocket, rp->ai_addr, rp->ai_addrlen) == 0) {
+            success = 0;
+            break;
+        }
+    }
+    freeaddrinfo(res);
+    if (success != 0) {
+        throw std::runtime_error("Unable to connect to host (DNS)");
+    }
+    return 0;
 }
 
 

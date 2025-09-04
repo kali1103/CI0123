@@ -67,8 +67,8 @@ A continuación algunos recursos visuales para entender un poco el
 funcionamiento. Recurso visual que ilustra la conexión
 `Cliente -> Fork -> Server`
 
-![flujo](resources/ConnectionFlow.png)
+![flujo](../resources/ConnectionFlow.png)
 
 Recurso visual para comprender un poco la estructura de los componentes.
 
-![Info](resources/ConnectionInfo.png)
+![Info](../resources/ConnectionInfo.png)
